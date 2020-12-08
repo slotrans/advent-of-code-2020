@@ -125,6 +125,7 @@ with marked as
                and answer_count = group_size
              group by group_id
            ) x
+    --answer: 3394
 )
 select * from part1_answer
 union all

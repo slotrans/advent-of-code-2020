@@ -30,6 +30,7 @@
 
 (ns net.blergh.advent2020
     (:require [clojure.string :as str]
+              [clojure.set :as set]
     )
 )
 
@@ -44,8 +45,6 @@
 )
 
 ; quick test
-(comment
-
 (def example-input "abc
 
 a
@@ -65,9 +64,7 @@ b
 (def example-input-groups
     (str/split example-input #"\n\n")
 )
-(println (apply + (map count-yes-in-group example-input-groups)))
-
-)
+;(println (apply + (map count-yes-in-group example-input-groups)))
 
 
 (def part1-answer
@@ -84,3 +81,26 @@ b
 ;You don't need to identify the questions to which _anyone_ answered "yes"; 
 ;you need to identify the questions to which *EVERYONE* answered "yes"!
 
+
+(defn find-questions-yes-by-all-in-group [grp]
+    (let [person-answers (str/split grp #"\n")]
+        (reduce set/intersection (map set person-answers))
+    )
+)
+
+;(doseq [g example-input-groups]
+;    (println (str g " -> " (find-questions-yes-by-all-in-group g) " -> " (count (find-questions-yes-by-all-in-group g))))
+;)
+
+
+(def part2-answer
+    (apply
+        +
+        (for [g input-groups]
+            (count (find-questions-yes-by-all-in-group g))
+        )
+    )
+)
+
+(println (str "part 2: " part2-answer))
+;answer=3394
