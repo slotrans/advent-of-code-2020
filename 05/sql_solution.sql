@@ -76,6 +76,7 @@ with translated as
        and taken_seat_id is null
        and is_prev_seat_taken = true
        and is_next_seat_taken = true
+    --answer: 599
 )
 select * from part1_answer
 union all
