@@ -1,0 +1,80 @@
+/*
+postgres=# create table advent2020.input06 ( idx serial primary key, val text not null ) ;
+CREATE TABLE
+postgres=# \copy advent2020.input06 (val) from 'input06' ;
+COPY 2246
+postgres=# select * from advent2020.input06 order by idx limit 20 ;
+ idx |           val
+-----+-------------------------
+   1 | lfnghcsvpyrdjtxozimb
+   2 | mdtbnorpfalcijxvhsy
+   3 | elmwjkfbihydxcpqtovsrun
+   4 | tlhmsdjingyxcbfrvpo
+   5 |
+   6 | a
+   7 | a
+   8 | xqh
+   9 |
+  10 | mxdeqcinvfg
+  11 | vbncrgzxqefka
+  12 |
+  13 | oejsdfwm
+  14 | fojsmewd
+  15 | ewxfsouimdj
+  16 | eodafjwsm
+  17 | edjwsmfo
+  18 |
+  19 | d
+  20 | d
+(20 rows)
+*/
+
+--same record-assembly technique from puzzle #4
+with marked as
+(
+    select i.idx
+         , i.val
+         , (select min(j.idx)
+              from advent2020.input06 j
+             where i.idx < j.idx
+               and j.val = ''
+           ) as NEXT_BLANK_LINE
+      from advent2020.input06 i
+     where 1=1
+)
+, assembled as
+(
+    select next_blank_line
+         , min(idx) as MIN_IDX
+         , string_agg(val, '') as FULL_VAL
+      from marked
+     where 1=1
+       and val != ''
+     group by next_blank_line
+     order by next_blank_line nulls last
+)
+, counted as
+(
+    select min_idx
+         , full_val
+         , (select count(distinct foo.match)
+              from regexp_matches(full_val, '[a-z]', 'g') as foo(match)
+           ) as UNIQUE_YES_ANSWERS
+         --a different way, arguably more direct than using a regex function...
+         , (select count(distinct foo.letter)
+              from unnest(string_to_array(full_val, null)) as foo(letter)
+           ) as UNIQUE_YES_ANSWERS_ALTERNATE
+      from assembled 
+     where 1=1
+     order by min_idx
+)
+, part1_answer as
+(
+    select 'part 1'
+         , sum(unique_yes_answers)
+      from counted
+     where 1=1
+    --answer: 6809
+)
+select * from part1_answer
+;
