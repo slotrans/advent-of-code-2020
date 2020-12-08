@@ -76,5 +76,57 @@ with marked as
      where 1=1
     --answer: 6809
 )
+, with_group_id as
+(
+    select idx as PERSON_ID
+         , coalesce(next_blank_line, -1) as GROUP_ID
+         , val
+      from marked
+     where 1=1
+       and val != ''
+     order by GROUP_ID
+)
+, exploded as
+(
+    select person_id
+         , group_id
+         , unnest(string_to_array(val, null)) as YES_TO_QUESTION
+      from with_group_id 
+     where 1=1
+     order by group_id
+)
+, aggregated as
+(
+    select e.group_id
+         , e.yes_to_question as QUESTION
+         , g.group_size
+         , count(1) as ANSWER_COUNT
+      from exploded e
+      join (select group_id
+                 , count(1) as GROUP_SIZE
+              from with_group_id
+             where 1=1
+             group by group_id
+           ) g on(e.group_id = g.group_id)
+     where 1=1
+     group by e.group_id
+            , QUESTION
+            , g.group_size
+)
+, part2_answer as
+(
+    select 'part 2'
+         , sum(answers_that_count)
+      from (
+            select group_id
+                 , count(1) as ANSWERS_THAT_COUNT
+              from aggregated
+             where 1=1
+               and answer_count = group_size
+             group by group_id
+           ) x
+)
 select * from part1_answer
+union all
+select * from part2_answer
 ;

@@ -76,3 +76,11 @@ b
 
 (println (str "part 1: " part1-answer))
 ;answer=6809
+
+
+;As you finish the last group's customs declaration, 
+;you notice that you misread one word in the instructions:
+;
+;You don't need to identify the questions to which _anyone_ answered "yes"; 
+;you need to identify the questions to which *EVERYONE* answered "yes"!
+
