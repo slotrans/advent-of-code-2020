@@ -64,39 +64,53 @@ acc +6"
 )
 ;(println code)
 
-(def code input-code)
 
-; closes over "code" instead of taking it as an argument, since it doesn't mutate
-(defn execute-until-repeat [instr-num accumulator already-run-instr-nums]
-    (if (contains? already-run-instr-nums instr-num)
-        accumulator
-        (let [ [instruction argument-string] (get code instr-num)
-             , argument (edn/read-string argument-string)
-             ]
-             ;(println (str "instruction=" instruction ", argument=" argument ", accumulator=" accumulator))
-             (cond
-                 (= instruction "acc")  (execute-until-repeat 
-                                            (+ instr-num 1)
-                                            (+ accumulator argument)
-                                            (conj already-run-instr-nums instr-num)
-                                        )
-                 (= instruction "jmp")  (execute-until-repeat
-                                            (+ instr-num argument)
-                                            accumulator
-                                            (conj already-run-instr-nums instr-num)
-                                        )
-                 (= instruction "nop")  (execute-until-repeat
-                                            (+ instr-num 1)
-                                            accumulator
-                                            (conj already-run-instr-nums instr-num)
-                                        )
-                 :else (throw (Exception. "UNKNOWN INSTRUCTION"))
-             )
+(defn execute-until-repeat [code instr-num accumulator already-run-instr-nums]
+    (if (>= instr-num (count code))
+        (do
+            (println "terminated!")
+            accumulator
+        )
+        (if (contains? already-run-instr-nums instr-num)
+            (do
+                (println "looped!")
+                accumulator
+            )
+            (let [ [instruction argument-string] (get code instr-num)
+                 , argument (edn/read-string argument-string)
+                 ]
+                 ;(println (str "instruction=" instruction ", argument=" argument ", accumulator=" accumulator))
+                 (cond
+                     (= instruction "acc")  (execute-until-repeat 
+                                                code
+                                                (+ instr-num 1)
+                                                (+ accumulator argument)
+                                                (conj already-run-instr-nums instr-num)
+                                            )
+                     (= instruction "jmp")  (execute-until-repeat
+                                                code
+                                                (+ instr-num argument)
+                                                accumulator
+                                                (conj already-run-instr-nums instr-num)
+                                            )
+                     (= instruction "nop")  (execute-until-repeat
+                                                code
+                                                (+ instr-num 1)
+                                                accumulator
+                                                (conj already-run-instr-nums instr-num)
+                                            )
+                     :else (throw (Exception. "UNKNOWN INSTRUCTION"))
+                 )
+            )
         )
     )
 )
 
-(def result (execute-until-repeat 0 0 #{}))
-(println (str "(p1 answer) accumulator at first repeat = " result))
+(def sample-result (execute-until-repeat sample-code 0 0 #{}))
+(println (str "(sample answer) accumulator at first repeat = " sample-result))
+;answer=5
+
+(def p1-result (execute-until-repeat input-code 0 0 #{}))
+(println (str "(p1 answer) accumulator at first repeat = " p1-result))
 ;answer=2034
 
