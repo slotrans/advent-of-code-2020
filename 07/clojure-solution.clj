@@ -132,6 +132,7 @@
     )
 )
 (println (str "outer bags that can contain a :shiny-gold = " part1-answer))
+;answer=101
 
 ;Consider again your shiny gold bag and the rules from the above example:
 ;
@@ -162,3 +163,4 @@
     (sum-bags-inside :shiny-gold input-rules)
 )
 (println (str "total bags inside :shiny-gold = " part2-answer))
+;answer=108636
