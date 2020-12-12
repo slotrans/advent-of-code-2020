@@ -67,15 +67,9 @@ acc +6"
 
 (defn execute-until-repeat [code instr-num accumulator already-run-instr-nums]
     (if (>= instr-num (count code))
-        (do
-            (println "terminated!")
-            accumulator
-        )
+        ["terminated!" accumulator]
         (if (contains? already-run-instr-nums instr-num)
-            (do
-                (println "looped!")
-                accumulator
-            )
+            ["looped!" accumulator]
             (let [ [instruction argument-string] (get code instr-num)
                  , argument (edn/read-string argument-string)
                  ]
@@ -107,10 +101,41 @@ acc +6"
 )
 
 (def sample-result (execute-until-repeat sample-code 0 0 #{}))
-(println (str "(sample answer) accumulator at first repeat = " sample-result))
+(println (str "(sample answer) program " (first sample-result) ", accumulator at first repeat = " (second sample-result)))
 ;answer=5
 
 (def p1-result (execute-until-repeat input-code 0 0 #{}))
-(println (str "(p1 answer) accumulator at first repeat = " p1-result))
+(println (str "(p1 answer) program " (first p1-result) ", accumulator at first repeat = " (second p1-result)))
 ;answer=2034
 
+
+(def code-to-patch input-code)
+(doseq [ [line-num [inst arg]] (map-indexed vector code-to-patch)]    
+    (cond
+        (= inst "acc")
+            (println (str line-num ": (skipping acc)"))
+        (= inst "nop")
+            (do
+                (print (str line-num ": swapping nop->jmp | "))
+                (let [ modified-line ["jmp" arg]
+                     , modified-code (assoc code-to-patch line-num modified-line)
+                     , p2-test-result (execute-until-repeat modified-code 0 0 #{})
+                     , [stop-type acc-value] p2-test-result
+                     ]
+                    (println (str "program " stop-type ", accumulator = " acc-value))
+                )
+            )
+        (= inst "jmp")
+            (do
+                (print (str line-num ": swapping jmp->nop | "))
+                (let [ modified-line ["nop" arg]
+                     , modified-code (assoc code-to-patch line-num modified-line)
+                     , p2-test-result (execute-until-repeat modified-code 0 0 #{})
+                     , [stop-type acc-value] p2-test-result
+                     ]
+                    (println (str "program " stop-type ", accumulator = " acc-value))
+                )
+            )
+    )
+)
+;solution at index 328, accumulator at termination = 672
