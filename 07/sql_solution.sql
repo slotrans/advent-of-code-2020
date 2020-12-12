@@ -53,7 +53,7 @@ with first_split as
 , rules as
 (
     select outer_color as OUTER_COLOR_KEY
-         , content_rule[1] as INNER_COUNT
+         , (content_rule[1])::bigint as INNER_BAG_COUNT
          , content_rule[2] as INNER_COLOR_KEY
       from exploded
      where 1=1
@@ -67,7 +67,9 @@ with first_split as
              , array[inner_color_key] as INNER_COLOR_ARR
           from rules
          where 1=1
+        --
         union all
+        --
         select exp.outer_color_key
              --, array_prepend(r.inner_color_key, exp.inner_color_arr) as INNER_COLOR_ARR
              , array_append(exp.inner_color_arr, r.inner_color_key) as INNER_COLOR_ARR
@@ -88,5 +90,47 @@ with first_split as
        and (',' || array_to_string(inner_color_arr, ',') || ',') like '%,shiny gold,%'
     --answer: 101
 )
+, part2_base as
+(
+    with recursive rule_expansion( level
+                                 , outer_color_key
+                                 , inner_color_key
+                                 , inner_bag_count
+                                 , product
+                                 ) 
+    as
+    (
+        select 1 as LEVEL
+             , outer_color_key
+             , inner_color_key
+             , inner_bag_count
+             , inner_bag_count as PRODUCT
+          from rules
+         where 1=1
+           and outer_color_key = 'shiny gold'
+        --
+        union all
+        --
+        select exp.level + 1 as LEVEL
+             , r.outer_color_key
+             , r.inner_color_key
+             , r.inner_bag_count
+             , exp.product * r.inner_bag_count as PRODUCT
+          from rule_expansion exp
+          join rules r on(exp.inner_color_key = r.outer_color_key)
+         where 1=1
+    )
+    select * from rule_expansion
+)
+, part2_answer as
+(
+    select 'part 2'
+         , sum(product)
+      from part2_base
+     where 1=1
+    --answer: 108636
+)
 select * from part1_answer
+union all
+select * from part2_answer
 ;
