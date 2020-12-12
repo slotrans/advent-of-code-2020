@@ -153,7 +153,7 @@
             (let [ color (key sub-rule)
                  , count (val sub-rule)
                  ]
-                (+ count(* count (sum-bags-inside color rules)))
+                (+ count (* count (sum-bags-inside color rules)))
             )
         )
     )
