@@ -72,7 +72,7 @@ as
      where 1=1
        and e.executed_lines not like ('%,' || i.line_num::text || ',%')
 )
-, part1_answer as
+, part1_base as
 (
     select counter
          , line_num
@@ -83,5 +83,24 @@ as
      where 1=1
      order by counter
 )
-select * from part1_answer --last line accumulator value: 2034
+, part1_answer as
+(
+    select 'part 1'
+         , accumulator
+      from part1_base
+     where 1=1
+       and counter = (select max(counter) from part1_base)
+    --answer: 2034
+)
 ;
+
+/*
+select i.line_num
+     , i.instruction
+     , i.argument
+  from advent2020.input08 i
+ where 1=1
+   and i.instruction in ( 'jmp', 'nop' )
+ order by i.line_num
+;
+*/
