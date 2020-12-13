@@ -55,6 +55,13 @@
 
 (println (is-valid? 127 [95 102 117 150 182]))
 
-;(defn find-first-invalid
-;    
-;)
+
+(defn find-first-invalid [stream]
+    (let [ preamble (take 25 stream)
+         , stream (nthrest stream 25)
+         ]
+        (for [x stream]
+            
+        )
+    )
+)
