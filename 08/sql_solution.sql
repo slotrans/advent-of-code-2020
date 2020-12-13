@@ -122,22 +122,27 @@ as
 select * from part1_answer
 ;
 
-/*
-select p.line_num
-     , p.instruction
-     , p.argument
-     , 
-  from (
-        select p.line_num
-             , (case p.instruction
-                when 'jmp' then 'nop'
-                when 'nop' then 'jmp'
-                 end) as INSTRUCTION
-             , p.argument
-          from advent2020.input08
-         where 1=1
-           and p.instruction in ( 'jmp', 'nop' )
-       ) patched
+
+--part 2
+with var as
+(
+    select max(line_num) as MAX_LINE_NUM
+      from advent2020.input08
+     where 1=1
+)
+, lines_to_patch as
+(
+    select line_num
+         , instruction
+      from advent2020.input08
+     where 1=1
+       and instruction in ( 'jmp', 'nop' )
+)
+select ltp.line_num as PATCHED_LINE_NUM
+     , ltp.instruction as ORIG_INSTRUCTION
+     , run_patched.program_state
+     , run_patched.accumulator
+  from lines_to_patch ltp
   join lateral (
                 with recursive execution( line_num
                                         , instruction
@@ -150,6 +155,7 @@ select p.line_num
                                         )
                 as
                 (
+                    --virtual 0th line to get the program rolling
                     select 0 as LINE_NUM
                          , 'nop' as INSTRUCTION
                          , 0 as ARGUMENT
@@ -161,37 +167,64 @@ select p.line_num
                     --
                     union all
                     --
-                    select i.line_num
-                         , i.instruction
-                         , i.argument
-                         , e.accumulator + (case i.instruction
-                                            when 'acc' then i.argument
-                                            when 'jmp' then 0
-                                            when 'nop' then 0
-                                             end
-                                           ) as ACCUMULATOR
-                         , i.line_num + (case i.instruction
-                                         when 'acc' then 1
-                                         when 'jmp' then i.argument
-                                         when 'nop' then 1
-                                          end
-                                        ) as NEXT_LINE_NUM
-                         , (e.executed_lines || i.line_num::text || ',') as EXECUTED_LINES
-                         , e.counter + 1 as COUNTER
-                         , case when e.executed_lines like ('%,' || i.line_num::text || ',%')
-                                then 'looped'
-                                when i.instruction = 'jump' and i.line_num + i.argument
-                                when 
-                                else 'normal'
-                                 end as PROGRAM_STATE --this lets us get one more row after finding the loop -- or termination in p2 -- so we can report on how we stopped
-                      from execution e
-                      join advent2020.input08 i on(e.next_line_num = i.line_num)
+                    select *
+                      from (
+                            select x.line_num
+                                 , x.instruction
+                                 , x.argument
+                                 , x.accumulator
+                                 , x.next_line_num
+                                 , (x.executed_lines || x.line_num::text || ',') as EXECUTED_LINES --this append cannot be done in the inner query or it will falsify the program_state check
+                                 , x.counter
+                                 , case when x.executed_lines like ('%,' || x.line_num::text || ',%')
+                                        then 'looped'
+                                        when x.executed_lines like ('%,' || x.next_line_num::text || ',%')
+                                        then 'about to loop'
+                                        when x.next_line_num > (select max_line_num from var)
+                                        then 'about to terminate'
+                                        else 'normal'
+                                         end as PROGRAM_STATE --this lets us report on how we stopped                
+                              from (
+                                    select i.line_num
+                                         , i.instruction
+                                         , i.argument
+                                         , e.accumulator + (case i.instruction
+                                                            when 'acc' then i.argument
+                                                            when 'jmp' then 0
+                                                            when 'nop' then 0
+                                                             end) as ACCUMULATOR
+                                         , i.line_num + (case i.instruction
+                                                         when 'acc' then 1
+                                                         when 'jmp' then i.argument
+                                                         when 'nop' then 1
+                                                          end) as NEXT_LINE_NUM
+                                         , e.executed_lines
+                                         , e.counter + 1 as COUNTER
+                                      from execution e
+                                      join (
+                                            --emits patched code
+                                            select c.line_num
+                                                 , case when c.line_num = ltp.line_num
+                                                        then (case c.instruction
+                                                              when 'jmp' then 'nop'
+                                                              when 'nop' then 'jmp'
+                                                               end) 
+                                                        else c.instruction
+                                                         end as INSTRUCTION
+                                                 , c.argument
+                                              from advent2020.input08 c
+                                             where 1=1
+                                           ) i on(e.next_line_num = i.line_num)
+                                     where 1=1
+                                   ) x
+                             where 1=1
+                           ) z
                      where 1=1
+                       and z.program_state in ( 'normal', 'about to loop', 'about to terminate' )
                 )
-                    
-               ) foo on(true)
+                select * from execution
+               ) run_patched on(run_patched.program_state like 'about%')
  where 1=1
-   and i.instruction in ( 'jmp', 'nop' )
- order by i.line_num
+ order by PATCHED_LINE_NUM
 ;
-*/
+--patching line 329 (1-based) leads to termination with an accumulator value of 672
