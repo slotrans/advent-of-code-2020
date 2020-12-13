@@ -52,32 +52,46 @@ as
     --
     union all
     --
-    select i.line_num
-         , i.instruction
-         , i.argument
-         , e.accumulator + (case i.instruction
-                            when 'acc' then i.argument
-                            when 'jmp' then 0
-                            when 'nop' then 0
-                             end
-                           ) as ACCUMULATOR
-         , i.line_num + (case i.instruction
-                         when 'acc' then 1
-                         when 'jmp' then i.argument
-                         when 'nop' then 1
-                          end
-                        ) as NEXT_LINE_NUM
-         , (e.executed_lines || i.line_num::text || ',') as EXECUTED_LINES
-         , e.counter + 1 as COUNTER
-         , case when e.executed_lines like ('%,' || i.line_num::text || ',%')
-                then 'looped'
-                else 'normal'
-                 end as PROGRAM_STATE --this lets us get one more row after finding the loop -- or termination in p2 -- so we can report on how we stopped
-      from execution e
-      join advent2020.input08 i on(e.next_line_num = i.line_num)
+    select *
+      from (
+            select x.line_num
+                 , x.instruction
+                 , x.argument
+                 , x.accumulator
+                 , x.next_line_num
+                 , (x.executed_lines || x.line_num::text || ',') as EXECUTED_LINES --this append cannot be done in the inner query or it will falsify the program_state check
+                 , x.counter
+                 , case when x.executed_lines like ('%,' || x.line_num::text || ',%')
+                        then 'looped'
+                        when x.executed_lines like ('%,' || x.next_line_num::text || ',%')
+                        then 'about to loop'
+                        else 'normal'
+                         end as PROGRAM_STATE --this lets us report on how we stopped                
+              from (
+                    select i.line_num
+                         , i.instruction
+                         , i.argument
+                         , e.accumulator + (case i.instruction
+                                            when 'acc' then i.argument
+                                            when 'jmp' then 0
+                                            when 'nop' then 0
+                                             end) as ACCUMULATOR
+                         , i.line_num + (case i.instruction
+                                         when 'acc' then 1
+                                         when 'jmp' then i.argument
+                                         when 'nop' then 1
+                                          end) as NEXT_LINE_NUM
+                         , e.executed_lines
+                         , e.counter + 1 as COUNTER
+                      from execution e
+                      join advent2020.input08 i on(e.next_line_num = i.line_num)
+                     where 1=1
+                       --and e.executed_lines not like ('%,' || i.line_num::text || ',%') --this is cleaner but makes it hard to show the terminal state
+                   ) x
+             where 1=1
+           ) z
      where 1=1
-       --and e.executed_lines not like ('%,' || i.line_num::text || ',%') --this is cleaner but makes it hard to show the terminal state
-       and e.program_state = 'normal'
+       and z.program_state in ( 'normal', 'about to loop' )
 )
 , part1_base as
 (
@@ -87,6 +101,8 @@ as
          , argument
          , accumulator
          , program_state
+         , next_line_num
+         , executed_lines
       from execution
      where 1=1
      order by counter
@@ -97,7 +113,10 @@ as
          , accumulator
       from part1_base
      where 1=1
-       and counter = (select max(counter) from part1_base where program_state = 'normal')
+       and counter = (select max(counter) 
+                        from part1_base 
+                       where program_state in ( 'normal', 'about to loop' )
+                     )
     --answer: 2034
 )
 select * from part1_answer
@@ -127,6 +146,7 @@ select p.line_num
                                         , next_line_num
                                         , executed_lines
                                         , counter
+                                        , program_state
                                         )
                 as
                 (
@@ -137,6 +157,7 @@ select p.line_num
                          , 1 as NEXT_LINE_NUM
                          , ',' as EXECUTED_LINES
                          , 0 as COUNTER
+                         , 'normal' as PROGRAM_STATE
                     --
                     union all
                     --
@@ -157,10 +178,15 @@ select p.line_num
                                         ) as NEXT_LINE_NUM
                          , (e.executed_lines || i.line_num::text || ',') as EXECUTED_LINES
                          , e.counter + 1 as COUNTER
+                         , case when e.executed_lines like ('%,' || i.line_num::text || ',%')
+                                then 'looped'
+                                when i.instruction = 'jump' and i.line_num + i.argument
+                                when 
+                                else 'normal'
+                                 end as PROGRAM_STATE --this lets us get one more row after finding the loop -- or termination in p2 -- so we can report on how we stopped
                       from execution e
                       join advent2020.input08 i on(e.next_line_num = i.line_num)
                      where 1=1
-                       and e.executed_lines not like ('%,' || i.line_num::text || ',%')     
                 )
                     
                ) foo on(true)
