@@ -58,10 +58,25 @@
 
 (defn find-first-invalid [stream]
     (let [ preamble (take 25 stream)
-         , stream (nthrest stream 25)
+         , rest-of-stream (nthrest stream 25)
+         , number-to-test (first rest-of-stream)
          ]
-        (for [x stream]
-            
+        ;(println (str "testing " number-to-test))
+        (if (not (is-valid? number-to-test preamble))
+            number-to-test
+            (find-first-invalid (rest stream))
         )
     )
 )
+
+(def input09 (slurp "input09"))
+
+(def input-stream 
+    (for [i (str/split-lines input09)]
+        (Integer/parseInt i)
+    )
+)
+
+(def part1-answer (find-first-invalid input-stream))
+(println (str "(p1 answer) first invalid number in input stream: " part1-answer))
+;answer=258585477
