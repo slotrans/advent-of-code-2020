@@ -25,33 +25,36 @@
 )
 (def sample-adapter-chain2 (conj sample-input2 sample-device-rating2))
 
-(defn measure-differences [adapter-chain]
-    (frequencies
-        (loop [ output 0
-              , chain adapter-chain
-              , differences []
-              ]
-            (if (empty? chain)
-                differences
-                (let [ next-adapter (first chain)
-                     , diff (- next-adapter output)
-                     ]
-                    (recur
-                        next-adapter
-                        (rest chain)
-                        (conj differences diff)
-                    )
+(defn get-differences [adapter-chain]
+    (loop [ output 0
+          , chain adapter-chain
+          , differences []
+          ]
+        (if (empty? chain)
+            differences
+            (let [ next-adapter (first chain)
+                 , diff (- next-adapter output)
+                 ]
+                (recur
+                    next-adapter
+                    (rest chain)
+                    (conj differences diff)
                 )
             )
         )
     )
 )
 
+
 (println (str "sample chain 1: " sample-adapter-chain1))
-(println (str "joltage differences in sample chain 1 ({jolt->cnt}): " (measure-differences sample-adapter-chain1)))
+(println (str "joltage differences in sample chain 1 ({jolt->cnt}): " (frequencies (get-differences sample-adapter-chain1))))
+(println (str "difference list: " (get-differences sample-adapter-chain1)))
+(println)
 
 (println (str "sample chain 2: " sample-adapter-chain2))
-(println (str "joltage differences in sample chain 2 ({jolt->cnt}): " (measure-differences sample-adapter-chain2)))
+(println (str "joltage differences in sample chain 2 ({jolt->cnt}): " (frequencies (get-differences sample-adapter-chain2))))
+(println (str "difference list: " (get-differences sample-adapter-chain2)))
+(println)
 
 
 (def input10 (slurp "input10"))
@@ -69,8 +72,9 @@
 )
 (def input-adapter-chain (conj input-joltages input-device-rating))
 
-(def input-differences (measure-differences input-adapter-chain))
-(println (str "joltage differences in input ({jolt->cnt}): " input-differences))
+(def input-differences (get-differences input-adapter-chain))
+(println (str "joltage differences in input:" input-differences))
+(println (str "joltage differences in input ({jolt->cnt}): " (frequencies input-differences)))
 (def part1-answer
     (*
         (get input-differences 1)
