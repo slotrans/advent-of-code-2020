@@ -9,7 +9,9 @@
 ;Treat the charging outlet near your seat as having an effective joltage rating of 0.
 
 (ns net.blergh.advent2020
-    (:require [clojure.string :as str])
+    (:require [clojure.string :as str]
+              [clojure.set :as set]
+    )
 )
 
 
@@ -83,3 +85,71 @@
 )
 (println (str "(p1 answer) 1j differences * 3j differences = " part1-answer))
 ;answer=1914
+
+
+;depth parameter is just for debugging, this was hard to get right
+(defn find-permutations [stream pset depth]
+    ;(println (str "(" depth ") entering fn with stream: " (vec stream)))
+    (apply set/union
+        (for [idx (range 0 (count stream))]
+            (let [ cur (get stream idx)
+                 , nxt (get stream (+ 1 idx))
+                 ]
+                ;(println (str "(" depth ") " stream))
+                ;(println (str "(" depth ")  " (apply str (repeat idx "  ")) "^ ^"))
+                (if (not nxt)
+                    pset
+                    (cond
+                        (= [cur nxt] [1 1])
+                            (do
+                                ;(println "found 1 1")
+                                (let [modified-stream (vec (concat (take idx stream) [2] (drop (+ 2 idx) stream)))]
+                                    (find-permutations modified-stream (conj pset modified-stream) (+ 1 depth))
+                                )
+                            )
+                        (or (= [cur nxt] [2 1])
+                            (= [cur nxt] [1 2])
+                        )
+                            (do
+                                ;(println (str "found " cur " " nxt))
+                                (let [modified-stream (vec (concat (take idx stream) [3] (drop (+ 2 idx) stream)))]
+                                    (find-permutations modified-stream (conj pset modified-stream) (+ 1 depth))
+                                )
+                            )
+                        :else pset
+                    )
+                )
+            )
+        )
+    )
+)
+
+(def input-differences-as-str (str/join input-differences))
+
+; any sequence of at least two 1's/2's has permutations in it, everything else can be ignored
+(def sub-chain-strings (re-seq #"[12]{2,}" input-differences-as-str))
+(def sub-chains 
+    (for [i sub-chain-strings]
+        (map 
+            (fn [x] (Integer/parseInt (str x)))
+            (vec i) ; "111" -> [\1 \1 \1]
+        )
+    )
+)
+
+(def input-differences-permutation-count
+    (apply
+        *
+        (for [sc sub-chains]
+            (let [ sc-vec (vec sc)
+                 , solutions (find-permutations sc-vec #{sc-vec} 0)
+                 , sol-cnt (count solutions)
+                 ]
+                sol-cnt
+            )        
+        )
+    )
+)
+(println (str "distinct adapter arrangements: " input-differences-permutation-count))
+;answer=9256148959232
+; with commas 9,256,148,959,232
