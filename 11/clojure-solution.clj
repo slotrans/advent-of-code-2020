@@ -37,13 +37,10 @@
 ;    (println row)
 ;)
 
-; from puzzle #3, adjusted to zero-based indexing, and to return \. for a non-existent location
+; from puzzle #3, adjusted to zero-based indexing
 (defn index-by-coords [grid x y]
-    (or
-        (let [row (get grid y)]
-            (get row x)
-        )
-        \.
+    (let [row (get grid y)]
+        (get row x)
     )
 )
 
@@ -141,3 +138,104 @@
 (println (str "part 1 answer (occupied seats): " stable-input-occupied-seats))
 ;answer=2470
 
+
+
+(defn look-in-line [grid x y xstep ystep]
+    (loop [ xcur (+ x xstep)
+          , ycur (+ y ystep)
+          ]
+        (let [seat (index-by-coords grid xcur ycur)]
+            (if (contains? #{\L \# nil} seat)
+                seat
+                (recur
+                    (+ xcur xstep)
+                    (+ ycur ystep)
+                )
+            )
+        )        
+    )
+)
+
+(defn get-visible-seats [grid x y]
+    [
+        ;left & up
+        (look-in-line grid x y -1 -1)
+        ;up
+        (look-in-line grid x y  0 -1)
+        ;right & up
+        (look-in-line grid x y  1 -1)
+
+        ;left
+        (look-in-line grid x y -1  0)
+        ;center
+       ;(no-op)
+        ;right
+        (look-in-line grid x y  1  0)
+
+        ;left & down
+        (look-in-line grid x y -1  1)
+        ;down
+        (look-in-line grid x y  0  1)
+        ;right & down
+        (look-in-line grid x y  1  1)
+    ]
+)
+
+;the functions I wrote for p1 could have been further parameterized so get-visible-seats could be swapped
+;in for get-adjacent-seats, and a rules function too... but screw it, let's copy & paste!
+
+(defn next-seat-state-p2 [grid x y]
+    (let [ this-seat (index-by-coords grid x y)
+         , visible-seats (get-visible-seats grid x y)
+         ]
+        (cond 
+            (and (= \L this-seat)                                ; seat is empty
+                 (= (count (filter #(= \# %) visible-seats)) 0) ; no occupied seats adjacent (could also use not-any?)
+            )
+            \# ; becomes occupied
+            (and (= \# this-seat)                                 ; seat is occupied
+                 (>= (count (filter #(= \# %) visible-seats)) 5) ; >= 5 occupied seats adjacent
+            )
+            \L ; becomes empty
+            :else this-seat ; unchanged
+        )    
+    )
+)
+
+(defn step-simulation-p2 [grid]
+    (let [ ysize (count grid)
+         , xsize (count (get grid 0))
+         ]
+        (into
+            []
+            (for [y (range 0 ysize)]
+                (into
+                    []
+                    (for [x (range 0 xsize)]
+                        (next-seat-state-p2 grid x y)
+                    )
+                )
+            )    
+        )
+    )
+)
+
+(defn simulate-until-stable-p2 [grid]
+    (let [next-grid (step-simulation-p2 grid)]
+        (if (= grid next-grid)
+            grid
+            (simulate-until-stable-p2 next-grid)
+        )
+    )
+)
+
+(def stable-input-grid-p2 (simulate-until-stable-p2 input-grid))
+(doseq [row stable-input-grid-p2]
+    (println row)
+)
+
+(def stable-input-occupied-seats-p2
+    (count (filter #(= \# %) (flatten stable-input-grid-p2)))
+)
+(println (str "part 2 answer (occupied seats): " stable-input-occupied-seats-p2))
+;answer=2259
