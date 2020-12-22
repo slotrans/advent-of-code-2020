@@ -110,3 +110,60 @@
 (def part1-answer (manhattan-distance (navigate input-instructions [0 0] 90)))
 (println (str "part1 answer: " part1-answer))
 ;answer=820
+
+
+(defn move-to-waypoint [s-coords w-offsets n-times] ; -> new-s-coords
+    (let [ [sx sy] s-coords
+         , [wx wy] w-offsets
+         , new-s-coords [(+ sx (* wx n-times)) (+ sy (* wy n-times))]
+         ]
+        new-s-coords
+    )
+)
+
+; (10,4) --R90-->  (4,-10)
+; (10,4) --R180--> (-10,-4)
+; (10,4) --R270--> (-4,10)
+(defn rotate-waypoint [offsets degrees] ; -> [offsets]
+    (let [[x y] offsets]
+        (cond
+            ; cheating a little here: only 90, 180, 270 appear in the input
+            (=   0 degrees) [x y]
+            (=  90 degrees) [y (* -1 x)]
+            (= 180 degrees) [(* -1 x) (* -1 y)]
+            (= 270 degrees) [(* -1 y) x]
+        )
+    )
+)
+; NOTE: problem is i'm rotating the waypoint around the origin, not around the ship
+;       need to also pass in s-coords, perform the rotation on the relative position,
+;       and use that to derive the new absolute position
+;       ...or would I be better off carrying the waypoint position as offsets all the time???
+
+(defn waypoint-navigate [instructions s-coords w-offsets] ; -> s-coords
+    (let [ instruction (first instructions)
+         , [inst arg] instruction
+         , [sx sy] s-coords
+         , [wx wy] w-offsets
+         ]
+        (println (str "ship at (" sx "," sy ") / waypoint at (" wx "," wy ")"))
+        (println (str "> " instruction))
+        (if (nil? instruction)
+            s-coords
+            (cond
+                (contains? #{:N :S :E :W} inst)
+                    (waypoint-navigate (rest instructions) s-coords (move w-offsets (get-heading inst) arg))
+                (= :L inst)
+                    (waypoint-navigate (rest instructions) s-coords (rotate-waypoint w-offsets (- 360 arg)))
+                (= :R inst)
+                    (waypoint-navigate (rest instructions) s-coords (rotate-waypoint w-offsets arg))
+                (= :F inst)
+                    (waypoint-navigate (rest instructions) (move-to-waypoint s-coords w-offsets arg) w-offsets)
+            )
+        )
+    )
+)
+
+(def part2-answer (manhattan-distance (waypoint-navigate input-instructions [0 0] [10 1])))
+(println (str "part2 answer: " part2-answer))
+;answer=66614
