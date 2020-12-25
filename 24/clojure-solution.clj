@@ -33,6 +33,10 @@
     }
 )
 
+(defn add-coords [a b]
+    (vec (map + a b))
+)
+
 (defn trace-directions [directions coords] ; -> coords
     (assert (= 0 (+ (coords 0) (coords 1) (coords 2))) "Invalid cube coordinates!") ; cube coords satisfy x + y + z = 0
     (let [direction (first directions)]
@@ -41,7 +45,7 @@
             (let [coord-deltas (direction-deltas direction)]
                 (trace-directions 
                     (rest directions)
-                    (vec (map + coords coord-deltas))
+                    (add-coords coords coord-deltas)
                 )
             )
         )
@@ -49,13 +53,10 @@
 )
 
 (defn flip-tile [grid coords]
-    (if (not (contains? grid coords))
-        :black ; tiles not in the sparse grid are assumed to be :white
-        (let [tile-state (grid coords)]
-            (if (= :white tile-state)
-                :black
-                :white
-            )
+    (let [tile-state (get grid coords :white)]
+        (if (= :white tile-state)
+            :black
+            :white
         )
     )
 )
@@ -81,9 +82,9 @@
 )
 
 ; run the sample
-;(def sample-directions (directions-from-input "sample-input24"))
-;
-;(def sample-grid (create-sparse-grid sample-directions {}))
+(def sample-directions (directions-from-input "sample-input24"))
+
+(def sample-grid (create-sparse-grid sample-directions {}))
 ;(doseq [i sample-grid]
 ;    (println i)
 ;)
@@ -94,5 +95,117 @@
 
 (def input-grid (create-sparse-grid input-directions {}))
 
+(println "part1 answer")
 (println (frequencies (vals input-grid)))
 ;answer=244
+
+
+;part 2
+(defn count-adjacent-black-tiles [grid coords]
+    (count 
+        (filter 
+            #(= :black %)
+            [ (get grid (add-coords coords (direction-deltas :ne)) :white)
+            , (get grid (add-coords coords (direction-deltas  :e)) :white)
+            , (get grid (add-coords coords (direction-deltas :se)) :white)
+            , (get grid (add-coords coords (direction-deltas :sw)) :white)
+            , (get grid (add-coords coords (direction-deltas  :w)) :white)
+            , (get grid (add-coords coords (direction-deltas :nw)) :white)
+            ]
+        )
+    )
+)
+
+; the grid we get from following the directions is sparse, which creates a problem
+; for applying cellular automata rules to each tile
+; since the rules are based on "# of black neighbors" it should be sufficient to
+; fill in neighboring tiles for every black tile in the grid
+;
+; do this by conjuring white tiles for every neighbor, then merging the actual grid into that
+(defn ensure-neighbors [grid] ; -> grid
+    (merge
+        (into
+            {}
+            (for [[coords color] (seq grid)]
+                (let [ neighbor-coords [ (add-coords coords (direction-deltas :ne))
+                                       , (add-coords coords (direction-deltas  :e))
+                                       , (add-coords coords (direction-deltas :se))
+                                       , (add-coords coords (direction-deltas :sw))
+                                       , (add-coords coords (direction-deltas  :w))
+                                       , (add-coords coords (direction-deltas :nw))
+                                       ]
+                     ]
+                    (into
+                        {}
+                        (for [neighbor neighbor-coords]
+                            [neighbor :white]
+                        )
+                    )
+                )
+            )
+        )
+        grid
+    )
+)
+
+;(println "sample grid, sparse")
+;(doseq [i sample-grid]
+;    (println i)
+;)
+;(println (frequencies (vals sample-grid)))
+;(println "sample grid, less sparse")
+;(def less-sparse-sample-grid (ensure-neighbors sample-grid))
+;(doseq [i less-sparse-sample-grid]
+;    (println i)
+;)
+;(println (frequencies (vals less-sparse-sample-grid)))
+
+
+;adapted from #11
+(defn next-tile-state [grid coords]
+    (let [ this-tile-color (get grid coords)
+         , num-adjacent-black-tiles (count-adjacent-black-tiles grid coords)
+         ]
+        (cond 
+            (and (= :black this-tile-color)
+                 (or (= num-adjacent-black-tiles 0)
+                     (> num-adjacent-black-tiles 2)
+                 ) ; 0 or >2 black neighbors -> white
+            )
+            :white
+            (and (= :white this-tile-color)
+                 (= num-adjacent-black-tiles 2) ; exactly 2 black neighbors -> black
+            )
+            :black
+            :else this-tile-color
+        )    
+    )
+)
+
+;adapted from #11
+(defn step-simulation [grid]
+    (let [less-sparse-grid (ensure-neighbors grid)]
+        (into
+            {}
+            (for [coords (keys less-sparse-grid)]
+                [coords (next-tile-state less-sparse-grid coords)]
+            )    
+        )
+    )
+)
+
+(defn simulate-n-times [grid n]
+    (println (str n " steps remaining"))
+    (if (= n 0)
+        grid
+        (simulate-n-times (step-simulation grid) (- n 1))
+    )
+)
+
+;run the sample
+;(def sample-grid-after-100 (simulate-n-times sample-grid 100))
+;(println (frequencies (vals sample-grid-after-100)))
+
+(def input-grid-after-100 (simulate-n-times input-grid 100))
+(println (frequencies (vals input-grid-after-100)))
+;answer=3665
