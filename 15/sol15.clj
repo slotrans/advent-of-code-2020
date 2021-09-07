@@ -43,7 +43,10 @@
                 ;              ", last-two-turns-spoken=" last-two-turns-spoken
                 ;              ", first?=" is-first-time-spoken?
                 ;              ", therefore speak " number-to-speak))
-                (recur (assoc recency-map number-to-speak (conj (get recency-map number-to-speak []) turn))
+                ;(recur (assoc recency-map number-to-speak (conj (get recency-map number-to-speak []) turn)) ; carrying the entire list turns out to be slow, replaced with the below which only carries the last two
+                (recur (assoc recency-map number-to-speak (if (contains? recency-map number-to-speak) 
+                                                              [(last (get recency-map number-to-speak)) turn]
+                                                              [turn]))
                        (+ 1 turn)
                        number-to-speak
                 )
@@ -81,4 +84,12 @@
 
 
 (def input15 [15 5 1 4 7 0])
-(println "input15:" input15 (play-to-turn input15 2020))
+(println "(part 1, to 2020) input15:" input15 (play-to-turn input15 2020))
+
+
+; part 2
+
+;(println (str "explanation sample " explanation-sample " last of 30000000 turns: " (play-to-turn explanation-sample 30000000)))
+
+(println "(part 2, to 30M) input15:" input15 (play-to-turn input15 30000000))
+
