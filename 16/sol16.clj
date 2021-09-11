@@ -1,6 +1,7 @@
 (ns net.blergh.advent2020
     (:require [clojure.string :as str]
               [clojure.edn :as edn]
+              [clojure.set :as set]
     )
 )
 
@@ -24,6 +25,12 @@
 ; 494,323,586,945,847,75,839,606,586,457,355,840,114,376,753,207,205,823,273,840
 
 
+; produces { "class" ((1 3) (5 7))
+;          , "row" ((6 11) (33 44))
+;          , "seat" ((13 40) (45 50))
+;          }
+; in theory each value is a sequence of ranges (each defined by inclusive bounds)
+; but in practice there are always exactly two such ranges
 (defn extract-field-ranges [input]
     (let [ input-lines (str/split input #"\n")
          ]
@@ -43,10 +50,19 @@
     )
 )
 
+; produces (7 1 14)
 (defn extract-your-ticket [input]
-    "ignore for now"
+    (map 
+        edn/read-string 
+        (str/split 
+            (second (str/split input #"\n")) 
+            #","))
 )
 
+; produces ((7 3 47) 
+;           (40 4 50) 
+;           (55 2 20) 
+;           (38 6 12))
 (defn extract-nearby-tickets [input]
     (let [ temp-input-lines (str/split input #"\n")
          , input-lines (rest temp-input-lines) ; throw away the "nearby tickets:" line
@@ -127,3 +143,88 @@ nearby tickets:
 (println "(p1) invalid values" invalid-values)
 (def invalid-values-sum (apply + invalid-values))
 (println "(p1) ticket scanning error rate" invalid-values-sum)
+
+
+; part 2
+
+(defn discard-invalid-tickets [tickets field-ranges]
+    (filter
+        some?
+        (for [ticket tickets]
+            (if (> (count (find-invalid-values [ticket] field-ranges)) 0)
+                nil
+                ticket
+            )
+        )
+    )
+)
+
+
+(defn find-valid-fields [num field-ranges]
+    (into
+        #{}
+        (filter
+            some?
+            (flatten
+                (for [field-entry field-ranges]
+                    (for [range (val field-entry)]
+                        (if (<= (first range) num (second range))
+                            (key field-entry)
+                            nil
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+
+; a ticket is a vector of fields
+; a field is a map...
+; { :num 3
+; , :possible-fields #{"row" "seat"}
+; }
+
+(defn enrich-ticket [ticket field-ranges]
+    (vec
+        (for [num ticket]
+            { :num num
+            , :possible-fields (find-valid-fields num field-ranges)
+            }
+        )
+    )
+)
+
+(defn enrich-all-tickets [tickets field-ranges]
+    (mapv
+        #(enrich-ticket % field-ranges)
+        tickets
+    )
+)
+
+(def p2-sample-input
+"class: 0-1 or 4-19
+row: 0-5 or 8-19
+seat: 0-13 or 16-19
+
+your ticket:
+11,12,13
+
+nearby tickets:
+3,9,18
+15,1,5
+5,14,9")
+(def structured-p2-sample-input (structure-input p2-sample-input))
+(def validated-structured-p2-sample-input
+    (assoc 
+        structured-p2-sample-input 
+        :nearby-tickets 
+        (discard-invalid-tickets (:nearby-tickets structured-p2-sample-input) (:field-ranges structured-p2-sample-input))
+    )
+)
+(def enriched-tickets-p2-sample 
+    (enrich-all-tickets (:nearby-tickets validated-structured-p2-sample-input) (:field-ranges validated-structured-p2-sample-input))
+)
+(doseq [t enriched-tickets-p2-sample]
+    (println t))
