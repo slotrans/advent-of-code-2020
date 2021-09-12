@@ -203,6 +203,72 @@ nearby tickets:
     )
 )
 
+
+(defn find-solution [enriched-tickets field-ranges solved-positions]
+    (println "solved positions" solved-positions)
+    (let [field-count (count (first enriched-tickets))]
+        (if (= (count solved-positions) field-count)
+            ;; bottom case
+            solved-positions
+            ;; incrementally solve
+            (loop [pos 0, mut-solved-positions solved-positions]
+                (if (> pos field-count)
+                    ;; we've finished a pass, make another recursive call which will either exit or start another pass
+                    (find-solution enriched-tickets field-ranges mut-solved-positions)
+                    ;; continue this pass
+                    (if (contains? (set (vals mut-solved-positions)) pos)
+                        ;; we already know
+                        (recur (inc pos) mut-solved-positions)
+                        ;; see what we find...
+                        (let [ this-pos-field-sets (for [t enriched-tickets] (:possible-fields (get t pos)))
+                             , this-pos-intersection (apply set/intersection this-pos-field-sets)
+                             , this-pos-possible-fields (set/difference this-pos-intersection (set (vals mut-solved-positions)))
+                             ]
+                            (if (= 1 (count this-pos-possible-fields))
+                                ;; we found one! pull the field name from the set and record it in this position
+                                (recur (inc pos) (assoc mut-solved-positions pos (first this-pos-possible-fields)))
+                                ;; keep going
+                                (recur (inc pos) mut-solved-positions)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+; my-ticket 11,12,13
+; field-solution {0 "row", 1 "class", 2 "seat"}
+; ->
+; {"row" 11, "class" 12, "seat" 13}
+(defn decode-my-ticket [my-ticket field-solution]
+    (into
+        {}
+        (map-indexed
+            (fn [idx item]
+                {(get field-solution idx) item}
+            )
+            my-ticket
+        )
+    )
+)
+
+(defn compute-p2-answer [decoded-ticket]
+    (apply 
+        *
+        (map
+            second
+            (filter
+                #(str/starts-with? (key %) "departure")
+                decoded-ticket
+            )
+        )
+    )
+)
+
+
+
 (def p2-sample-input
 "class: 0-1 or 4-19
 row: 0-5 or 8-19
@@ -218,7 +284,7 @@ nearby tickets:
 (def structured-p2-sample-input (structure-input p2-sample-input))
 (def validated-structured-p2-sample-input
     (assoc 
-        structured-p2-sample-input 
+        structured-p2-sample-input
         :nearby-tickets 
         (discard-invalid-tickets (:nearby-tickets structured-p2-sample-input) (:field-ranges structured-p2-sample-input))
     )
@@ -228,3 +294,22 @@ nearby tickets:
 )
 (doseq [t enriched-tickets-p2-sample]
     (println t))
+(def field-solution-p2-sample (find-solution enriched-tickets-p2-sample (:field-ranges validated-structured-p2-sample-input) {}))
+(def my-ticket-decoded-p2-sample (decode-my-ticket (:your-ticket validated-structured-p2-sample-input) field-solution-p2-sample))
+(println "(p2 sample) my ticket decoded:" my-ticket-decoded-p2-sample)
+
+
+(def validated-structured-input16
+    (assoc
+        structured-input16
+        :nearby-tickets
+        (discard-invalid-tickets (:nearby-tickets structured-input16) (:field-ranges structured-input16))
+    )
+)
+(def enriched-tickets-input16
+    (enrich-all-tickets (:nearby-tickets validated-structured-input16) (:field-ranges validated-structured-input16))
+)
+(def field-solution-input16 (find-solution enriched-tickets-input16 (:field-ranges validated-structured-input16) {}))
+(def my-ticket-decoded-input16 (decode-my-ticket (:your-ticket validated-structured-input16) field-solution-input16)) 
+(println "(p2) my ticket decoded:" my-ticket-decoded-input16)
+(println "p2 answer" (compute-p2-answer my-ticket-decoded-input16))
