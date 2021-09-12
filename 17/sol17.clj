@@ -146,14 +146,15 @@
 (defn next-cube-state [coords space] ; -> state (\# or \.)
     (let [ this-cube (get space coords)
          , adjacent-cubes (get-adjacent-cubes coords space)
+         , active-adjacent-cubes (count (filter #(= \# %) adjacent-cubes))
          ]
         (cond
-            (and (= \# this-cube)                                   ; cube is active
-                 (<= 2 (count (filter #(= \# %) adjacent-cubes)) 3) ; 2 or 3 active cubes adjacent
+            (and (= \# this-cube)               ; cube is active
+                 (<= 2 active-adjacent-cubes 3) ; 2 or 3 active cubes adjacent
             )
             \# ; remains active
-            (and (= \. this-cube)                                   ; cube is inactive
-                 (= (count (filter #(= \# %) adjacent-cubes)) 3)    ; exactly 3 active cubes adjacent
+            (and (= \. this-cube)               ; cube is inactive
+                 (= active-adjacent-cubes 3)    ; exactly 3 active cubes adjacent
             )
             \# ; becomes active
             :else \. ; becomes inactive
