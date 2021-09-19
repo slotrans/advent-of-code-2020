@@ -68,10 +68,10 @@
 )
 
 
-(defn evaluate ; -> result
+(defn evaluate-p1 ; -> result
     ;; 1-arg, for initial calling convenience
     ([math-seq]
-        (evaluate math-seq "+" 0)
+        (evaluate-p1 math-seq "+" 0)
     )
     ;; 3-arg, for (most) recursive calls
     ([math-seq queued-operator accumulator]
@@ -81,18 +81,18 @@
             (if (nil? token)
                 accumulator
                 (condp = token
-                    "+" (evaluate remaining "+" accumulator) ; queue addition
-                    "*" (evaluate remaining "*" accumulator) ; queue multiplication
+                    "+" (evaluate-p1 remaining "+" accumulator) ; queue addition
+                    "*" (evaluate-p1 remaining "*" accumulator) ; queue multiplication
                     ")" (throw (AssertionError. "unexpected )")) ; should never encounter a right paren, see below for sub-expression handling
                     "(" (let [ close-paren-pos (find-closing-paren remaining)
                              , inner-expr-tokens (take close-paren-pos remaining)
                              , tokens-after-inner-expr (drop (inc close-paren-pos) remaining)
                              ]
-                            (evaluate tokens-after-inner-expr nil (apply-operator queued-operator accumulator (evaluate inner-expr-tokens)))
+                            (evaluate-p1 tokens-after-inner-expr nil (apply-operator queued-operator accumulator (evaluate-p1 inner-expr-tokens)))
                         ) ; descend into parenthesized expression
                     ; else, a digit
                     (let [digit (edn/read-string token)]
-                        (evaluate remaining nil (apply-operator queued-operator accumulator digit))
+                        (evaluate-p1 remaining nil (apply-operator queued-operator accumulator digit))
                     )
                 )
             )
@@ -100,17 +100,19 @@
     )
 )
 
-(def sample-expressions
-    [ {:expr "2 * 3 + (4 * 5)" :expected 26}
+(def sample-expressions-p1
+    [ {:expr "1 + 2 * 3 + 4 * 5 + 6" :expected 71}
+    , {:expr "1 + (2 * 3) + (4 * (5 + 6))" :expected 51}
+    , {:expr "2 * 3 + (4 * 5)" :expected 26}
     , {:expr "5 + (8 * 3 + 9 + 3 * 4 * 3)" :expected 437}
     , {:expr "5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4))" :expected 12240}
     , {:expr "((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2" :expected 13632}
     ]
 )
 
-(doseq [x sample-expressions]
+(doseq [x sample-expressions-p1]
     (let [ {:keys [expr expected]} x
-         , actual (evaluate (tokenize-math-string expr))
+         , actual (evaluate-p1 (tokenize-math-string expr))
          ]
         (println (str "expression " expr " should equal " expected ", got " actual))
     )
@@ -121,8 +123,37 @@
     (reduce
         +
         (for [line (str/split-lines input18)]
-            (evaluate (tokenize-math-string line))
+            (evaluate-p1 (tokenize-math-string line))
         )
     )
 )
 (println "(p1) sum of expressions in input18 is" p1-answer)
+
+
+;;; part 2
+
+
+(defn evaluate-p2 [math-seq] ; -> result
+    nil
+)
+
+
+
+(def sample-expressions-p2
+    [ {:expr "1 + 2 * 3 + 4 * 5 + 6" :expected 231}
+    , {:expr "1 + (2 * 3) + (4 * (5 + 6))" :expected 51}
+    , {:expr "2 * 3 + (4 * 5)" :expected 46}
+    , {:expr "5 + (8 * 3 + 9 + 3 * 4 * 3)" :expected 1445}
+    , {:expr "5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4))" :expected 669060}
+    , {:expr "((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2" :expected 23340}
+    ]
+)
+
+(doseq [x sample-expressions-p2]
+    (let [ {:keys [expr expected]} x
+         , actual (evaluate-p2 (tokenize-math-string expr))
+         ]
+        (println (str "expression " expr " should equal " expected ", got " actual))
+    )
+)
+
