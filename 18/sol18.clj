@@ -14,33 +14,6 @@
 )
 
 
-(defn evaluate [math-seq depth]
-    (loop [ token (first math-seq)
-          ;, next-token (second math-seq)
-          , remaining (rest math-seq)
-          , queued-operator nil
-          , accum 0
-          ]
-        (if (nil? token)
-            accum
-            (condp = token
-                "(" (evaluate remaining (inc depth)) ; descend into parenthesized expression
-                ")" accum ; return
-                "+" (recur (next remaining) (nthrest remaining 2) "+" accum) ; queue addition
-                "*" (recur (next remaining) (nthrest remaining 2) "*" accum) ; queue multiplication
-                ; else, a digit
-                (let [digit (edn/read-string token)]
-                    (condp = queued-operator
-                        "+" (recur (next remaining) (nthrest remaining 2) nil (+ accum digit))
-                        "*" (recur (next remaining) (nthrest remaining 2) nil (* accum digit))
-                    )
-                )
-            )
-        )
-    )
-)
-
-
 ;; there's probably a fancier way to do this but whatever
 (defn apply-operator [op-string x y]
     (condp = op-string
@@ -83,7 +56,7 @@
                 (condp = token
                     "+" (evaluate-p1 remaining "+" accumulator) ; queue addition
                     "*" (evaluate-p1 remaining "*" accumulator) ; queue multiplication
-                    ")" (throw (AssertionError. "unexpected )")) ; should never encounter a right paren, see below for sub-expression handling
+                    ")" (throw (AssertionError. "ERROR: unexpected )")) ; should never encounter a right paren, see below for sub-expression handling
                     "(" (let [ close-paren-pos (find-closing-paren remaining)
                              , inner-expr-tokens (take close-paren-pos remaining)
                              , tokens-after-inner-expr (drop (inc close-paren-pos) remaining)
@@ -114,7 +87,7 @@
     (let [ {:keys [expr expected]} x
          , actual (evaluate-p1 (tokenize-math-string expr))
          ]
-        (println (str "expression " expr " should equal " expected ", got " actual))
+        (println (str "(p1) expression " expr " should equal " expected ", got " actual))
     )
 )
 
@@ -132,15 +105,111 @@
 
 ;;; part 2
 
+; pages I read looking for techniques...
+;   https://ruslanspivak.com/lsbasi-part5/
+;   (and then part 6 for parens)
+;     Problem with this is that it's so stateful. The expr(), term(), and factor() methods all take zero args,
+;   operating over object state instead of parameters. Then they return a value but also mutate the state of
+;   the object. I found it very difficult to mentally trace through what's happening. 
+;     I spent some time trying to translate this imperative/iterative/also-kinda-recursive solution to pure
+;   functional/recursive with limited success. What I came up with would work for all-+ or all-* but as soon
+;   as I mixed them it fell apart.
+;
+;   I blundered through several attempts to solve this statelessly with no success.
+;   I'm sure a solution exists, but I have no clues at this point, I don't find this interesting anymore,
+;   so I'm cutting my losses.
+;
+;   My solution is just a direct copy from the above lessons (part 6). I guess the one thing I got out of it
+;   is the experience of writing something overtly stateful in Clojure, using atoms. Oh well.
+
+
+;; yes this is lame
+(defn digit? [s]
+    (contains? #{"0" "1" "2" "3" "4" "5" "6" "7" "8" "9"} s)
+)
+
+
+;; destructively mutates our atom-wrapped sequence
+;; by replacing it with itself minus its first element
+(defn apop! [math-seq-atom]
+    (swap! math-seq-atom rest)
+)
+
+
+(declare consume-low) ;; forward reference
+
+(defn consume-digit-or-parens [math-seq-atom] ; -> result
+    (let [token (first @math-seq-atom)]
+        (cond 
+            (digit? token)
+                (let [ _ (apop! math-seq-atom)
+                     , result (edn/read-string token)
+                     ]
+                    result  
+                )
+            (= "(" token)
+                (let [ _ (apop! math-seq-atom)
+                     , result (consume-low math-seq-atom)
+                     , _ (apop! math-seq-atom)
+                     ]
+                    result
+                )
+            :else 
+                (throw (AssertionError. (str "consume-digit-or-parens: unexpected token " token)))
+        )
+    )
+)
+
+
+(defn consume-high [math-seq-atom] ; -> result
+    (let [ result (consume-digit-or-parens math-seq-atom)
+         ]
+        (loop [ token (first @math-seq-atom)
+              , result result
+              ]
+            (if (= "+" token)
+                (let [ _ (apop! math-seq-atom)
+                     , result (+ result (consume-digit-or-parens math-seq-atom))
+                     ]
+                    (recur (first @math-seq-atom) result)
+                )
+                result
+            )
+        )
+    )
+)
+
+
+(defn consume-low [math-seq-atom] ; -> result
+    (let [ result (consume-high math-seq-atom)
+         ]
+        (loop [ token (first @math-seq-atom)
+              , result result
+              ]
+            (if (= "*" token)
+                (let [ _ (apop! math-seq-atom)
+                     , result (* result (consume-high math-seq-atom))
+                     ]
+                    (recur (first @math-seq-atom) result)
+                )
+                result
+            )
+        )
+    )
+)
+
 
 (defn evaluate-p2 [math-seq] ; -> result
-    nil
+    (let [math-seq-atom (atom math-seq)]
+        (consume-low math-seq-atom)
+    )
 )
 
 
 
 (def sample-expressions-p2
-    [ {:expr "1 + 2 * 3 + 4 * 5 + 6" :expected 231}
+    [ {:expr "2 * 3 + 4 * 5" :expected 70}
+    , {:expr "1 + 2 * 3 + 4 * 5 + 6" :expected 231}
     , {:expr "1 + (2 * 3) + (4 * (5 + 6))" :expected 51}
     , {:expr "2 * 3 + (4 * 5)" :expected 46}
     , {:expr "5 + (8 * 3 + 9 + 3 * 4 * 3)" :expected 1445}
@@ -153,7 +222,16 @@
     (let [ {:keys [expr expected]} x
          , actual (evaluate-p2 (tokenize-math-string expr))
          ]
-        (println (str "expression " expr " should equal " expected ", got " actual))
+        (println (str "(p2) expression " expr " should equal " expected ", got " actual))
     )
 )
 
+(def p2-answer
+    (reduce
+        +
+        (for [line (str/split-lines input18)]
+            (evaluate-p2 (tokenize-math-string line))
+        )
+    )
+)
+(println "(p2) sum of expressions in input18 is" p2-answer)
