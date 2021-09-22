@@ -132,12 +132,12 @@ aaaabbb")
 )
 
 
-(let [[rules messages] (parse-input sample-input-2)]
-    (println rules)
-    (doseq [m messages]
-        (println (str "(sample) message '" m "' follows rules? " (matches-rule-zero? m rules)))
-    )
-)
+;(let [[rules messages] (parse-input sample-input-2)]
+;    (println rules)
+;    (doseq [m messages]
+;        (println (str "(sample) message '" m "' follows rules? " (matches-rule-zero? m rules)))
+;    )
+;)
 
 (def input19 (slurp "input19.txt"))
 (let [ [rules messages] (parse-input input19)
@@ -153,17 +153,35 @@ aaaabbb")
 
 ;;; part 2
 
-(def patched-input19 
-    (-> input19
-        (str/replace ,,, "8: 42\n" "8: 42 | 42 8\n")
-        (str/replace ,,, "11: 42 31\n" "11: 42 31 | 42 11 31\n")
-    )
-)
-(let [ [rules messages] (parse-input patched-input19)
-     , p2-answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
-     ]
-    (println "(p2) messages that match rule zero:" p2-answer)
-)
+;(def patched-input19 
+;    (-> input19
+;        (str/replace ,,, "8: 42\n" "8: 42 | 42 8\n")
+;        (str/replace ,,, "11: 42 31\n" "11: 42 31 | 42 11 31\n")
+;    )
+;)
+;(let [ [rules messages] (parse-input patched-input19)
+;     , p2-answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
+;     ]
+;    (println "(p2) messages that match rule zero:" p2-answer)
+;)
 
 ; gives 163 which is wrong (too low)
 ; dang, was hoping it would work unmodified!
+
+
+(def p2-sample-input (slurp "p2-sample-input.txt"))
+(let [ [rules messages] (parse-input p2-sample-input)
+     , answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
+     ]
+    (println "(p2 sample, unpatched) messages that match rule zero:" answer)
+
+    (let [ patched-input (-> p2-sample-input 
+                             (str/replace ,,, "8: 42\n" "8: 42 | 42 8\n")
+                             (str/replace ,,, "11: 42 31\n" "11: 42 31 | 42 11 31\n"))
+         , [rules messages] (parse-input patched-input)
+         , answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
+         ]
+        (println patched-input)
+        (println "(p2 sample, patched) messages that match rule zero:" answer)
+    )
+)
