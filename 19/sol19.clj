@@ -135,15 +135,17 @@ aaaabbb")
 (let [[rules messages] (parse-input sample-input-2)]
     (println rules)
     (doseq [m messages]
-        (println (str "message '" m "' follows rules? " (matches-rule-zero? m rules)))
+        (println (str "(sample) message '" m "' follows rules? " (matches-rule-zero? m rules)))
     )
 )
 
 (def input19 (slurp "input19.txt"))
 (let [ [rules messages] (parse-input input19)
-     , p1-answer (count (filter some? (map #(matches-rule-zero? % rules) messages)))
+     , p1-answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
      ]
     (println "(p1) messages that match rule zero:" p1-answer)
 )
 
 ; Came out to 406 which is wrong (too high, it says)!
+; dumb mistake, counting true is done with (filter identity ...) not (filter some ...)
+; correct answer is 122
