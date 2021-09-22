@@ -149,3 +149,21 @@ aaaabbb")
 ; Came out to 406 which is wrong (too high, it says)!
 ; dumb mistake, counting true is done with (filter identity ...) not (filter some ...)
 ; correct answer is 122
+
+
+;;; part 2
+
+(def patched-input19 
+    (-> input19
+        (str/replace ,,, "8: 42\n" "8: 42 | 42 8\n")
+        (str/replace ,,, "11: 42 31\n" "11: 42 31 | 42 11 31\n")
+    )
+)
+(let [ [rules messages] (parse-input patched-input19)
+     , p2-answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
+     ]
+    (println "(p2) messages that match rule zero:" p2-answer)
+)
+
+; gives 163 which is wrong (too low)
+; dang, was hoping it would work unmodified!
