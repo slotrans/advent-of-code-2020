@@ -98,46 +98,73 @@ aaaabbb")
 
 (declare match-rule-sequence) ; forward reference
 
-(defn match [s all-rules rule] ; -> remaining string, or nil
-    ;(println "testing" s "against" rule)
-    (cond
-        (nil? s)
-            nil
-        (:literal rule)
-            (if (str/starts-with? s (:literal rule))
-                (subs s 1) ; literals are always 1 character in the supplied input
-                nil
-            )
-        (:sequence rule)
-            (match-rule-sequence s all-rules (:sequence rule))
-        (:alternatives rule)
-            (some #(match s all-rules %) (:alternatives rule))
+(defn match [s all-rules rule-num] ; -> remaining string, or nil
+    (let [rule (get all-rules rule-num)]
+        ;(println (str "(m) testing " s " against " rule-num ": " rule))
+        (cond
+            (nil? s)
+                []
+            (= "" s)
+                []
+            (:literal rule)
+                (if (str/starts-with? s (:literal rule))
+                    [(subs s 1)] ; literals are always 1 character in the supplied input
+                    []
+                )
+            (:sequence rule)
+                (match-rule-sequence [s] all-rules (:sequence rule))
+            (:alternatives rule)
+                (let [ alternatives (:alternatives rule)
+                     , left (:sequence (first alternatives))
+                     , right (:sequence (second alternatives)) ; there are only ever two alternatives...
+                     ]
+                    (concat 
+                        (match-rule-sequence [s] all-rules left) 
+                        (match-rule-sequence [s] all-rules right)
+                    )
+                )
+        )
     )
 )
 
+; match-rule-sequence used to be the following... reduce makes my head hurt and i'm not sure it even works 
+; for the "return a list" case, so forget it.
+;(defn match-rule-sequence [s all-rules rule-nums-in-sequence]
+;    (reduce
+;        (fn [s2 rule-num]
+;            (match s2 all-rules (get all-rules rule-num))
+;        )
+;        s
+;        rule-nums-in-sequence
+;    )
+;)
 
-(defn match-rule-sequence [s all-rules rule-nums-in-sequence]
-    (reduce
-        (fn [s2 rule-num]
-            (match s2 all-rules (get all-rules rule-num))
+(defn match-rule-sequence [s-seq all-rules rule-nums-in-sequence]
+    ;(println (str "(mrs) testing " s-seq " against " rule-nums-in-sequence))
+    (if (empty? rule-nums-in-sequence)
+        s-seq
+        (let [ possible-suffixes (vec (flatten (map #(match % all-rules (first rule-nums-in-sequence)) s-seq)))
+             ]
+            (if (empty? possible-suffixes)
+                []
+                (match-rule-sequence possible-suffixes all-rules (rest rule-nums-in-sequence))
+            )
         )
-        s
-        rule-nums-in-sequence
     )
 )
 
 
 (defn matches-rule-zero? [s all-rules]
-    (= "" (match s all-rules (get all-rules 0)))
+    (.contains (match s all-rules 0) "")
 )
 
 
-;(let [[rules messages] (parse-input sample-input-2)]
-;    (println rules)
-;    (doseq [m messages]
-;        (println (str "(sample) message '" m "' follows rules? " (matches-rule-zero? m rules)))
-;    )
-;)
+(let [[rules messages] (parse-input sample-input-2)]
+    (println rules)
+    (doseq [m messages]
+        (println (str "(sample) message '" m "' follows rules? " (matches-rule-zero? m rules)))
+    )
+)
 
 (def input19 (slurp "input19.txt"))
 (let [ [rules messages] (parse-input input19)
@@ -153,22 +180,6 @@ aaaabbb")
 
 ;;; part 2
 
-;(def patched-input19 
-;    (-> input19
-;        (str/replace ,,, "8: 42\n" "8: 42 | 42 8\n")
-;        (str/replace ,,, "11: 42 31\n" "11: 42 31 | 42 11 31\n")
-;    )
-;)
-;(let [ [rules messages] (parse-input patched-input19)
-;     , p2-answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
-;     ]
-;    (println "(p2) messages that match rule zero:" p2-answer)
-;)
-
-; gives 163 which is wrong (too low)
-; dang, was hoping it would work unmodified!
-
-
 (def p2-sample-input (slurp "p2-sample-input.txt"))
 (let [ [rules messages] (parse-input p2-sample-input)
      , answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
@@ -181,7 +192,40 @@ aaaabbb")
          , [rules messages] (parse-input patched-input)
          , answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
          ]
-        (println patched-input)
+        ;(println patched-input)
         (println "(p2 sample, patched) messages that match rule zero:" answer)
     )
 )
+
+
+(def patched-input19 
+    (-> input19
+        (str/replace ,,, "8: 42\n" "8: 42 | 42 8\n")
+        (str/replace ,,, "11: 42 31\n" "11: 42 31 | 42 11 31\n")
+    )
+)
+(let [ [rules messages] (parse-input patched-input19)
+     , p2-answer (count (filter identity (map #(matches-rule-zero? % rules) messages)))
+     ]
+    (println "(p2) messages that match rule zero:" p2-answer)
+)
+
+; gives 163 which is wrong (too low)
+; dang, was hoping it would work unmodified!
+
+; correct answer: 287
+; yay!
+
+; Reddit thread: https://www.reddit.com/r/adventofcode/comments/kg1mro/2020_day_19_solutions/
+; This comment was key:
+;   Eventually, the key was that every OR chain needed to be followed (rather than just 
+;   choosing the first one which validated OK), and the remainders of the various chains 
+;   needed to be passed through to match against an action (since a different number of 
+;   values may have been consumed by different OR paths which were both valid).
+;
+; I ended up heavily consulting these solutions:
+;   http://www.michaelcw.com/programming/2020/12/22/aoc-2020-d19.html (Haskell)
+;   https://github.com/mebeim/aoc/blob/master/2020/README.md#day-19---monster-messages (Python)
+;   https://github.com/andi0b/advent-of-code-2020/blob/main/src/Day19.cs (C#, actually I didn't get much from this, C# has really changed!)
+;
+; The Haskell and Python solutions both came with extensive commentary which helped
