@@ -98,7 +98,7 @@ aaaabbb")
 
 (declare match-rule-sequence) ; forward reference
 
-(defn match [s all-rules rule-num] ; -> remaining string, or nil
+(defn match [s all-rules rule-num] ; -> sequence of possible remaining strings (suffixes), or [] if there are none
     (let [rule (get all-rules rule-num)]
         ;(println (str "(m) testing " s " against " rule-num ": " rule))
         (cond
@@ -139,7 +139,7 @@ aaaabbb")
 ;    )
 ;)
 
-(defn match-rule-sequence [s-seq all-rules rule-nums-in-sequence]
+(defn match-rule-sequence [s-seq all-rules rule-nums-in-sequence] ; -> sequence of possible suffixes, as for `match`
     ;(println (str "(mrs) testing " s-seq " against " rule-nums-in-sequence))
     (if (empty? rule-nums-in-sequence)
         s-seq
