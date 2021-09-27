@@ -48,7 +48,7 @@
 ;; The edge values are computed by interpreting the #/. as 1/0, which gives
 ;; a 10-bit number for each edge. Top and Bottom edges are read left-to-right,
 ;; Left and Right edges are read top-to-bottom. The strings above were manually
-;; transcribed from the instructions.
+;; transcribed from the sample solution.
 ;;
 ;; Tiles are listed here in L2R,T2B solution order (which will not match the
 ;; sorted-map based order below... that will be B,H,G,A,D,E,I,F,C).
@@ -60,7 +60,7 @@
     , "H" {:id 2729 :name "H" :top 710 :right   9 :bottom 85  :left 962}
     , "D" {:id 1427 :name "D" :top 210 :right 348 :bottom 948 :left   9}
     , "F" {:id 2473 :name "F" :top 184 :right 481 :bottom 399 :left 348}
-    
+
     , "G" {:id 2971 :name "G" :top 85  :right 689 :bottom 161 :left  78}
     , "E" {:id 1489 :name "E" :top 948 :right 288 :bottom 848 :left 689}
     , "C" {:id 1171 :name "C" :top 399 :right 902 :bottom 192 :left 288}
@@ -75,7 +75,7 @@
 ;; things (I would go L->R first), but it's a natural consequence of putting the X
 ;; coordinate first. Since the order we move through the board doesn't matter,
 ;; we'll just accept it.
-(def initial-board ; pairs are { [x y] tile-name }
+(def initial-board ; pairs are { [x y] {:name "NAME"} }
     (into
         (sorted-map)
         { [0 0] nil
@@ -135,7 +135,7 @@
 (defn matches-tile-in-direction [tile-data board tile-name coords direction] ; -> true/false
     (let [ tile (get tile-data tile-name)
          , other-tile-coords (shift-coords-in-direction coords direction)
-         , other-tile-name (get board other-tile-coords)
+         , other-tile-name (:name (get board other-tile-coords))
          , other-tile (get tile-data other-tile-name)
          , other-edge-key (direction {:top :bottom, :right :left, :bottom :top, :left :right})
          , other-edge (other-edge-key other-tile)
@@ -157,7 +157,7 @@
                  (matches-tile-in-direction tile-data board tile-name coords :left)
             )
             ;; it fits! return a new state with this tile at the requested coordinates, and removed from the set of available tiles
-            { :board (assoc board coords tile-name)
+            { :board (assoc board coords {:name tile-name})
             , :tile-names (disj tile-names tile-name)
             }
             ;; it doesn't fit!
@@ -183,6 +183,11 @@
             )
         )
         ;; recursive base case: board is complete, return it
-        [state]
+        (do
+            (println (str "found solution: " state))
+            [state]
+        )
     )
 )
+
+(solve tile-data initial-state)
