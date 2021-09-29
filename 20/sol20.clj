@@ -89,15 +89,15 @@
     ,  6 (-> tile-pixels (mirror-tile-horiz ,,,) (rotate-tile ,,, 180))
     ,  7 (-> tile-pixels (mirror-tile-horiz ,,,) (rotate-tile ,,, 270))
 
-    ,  8 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,,   0))
-    ,  9 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,,  90))
-    , 10 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,, 180))
-    , 11 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,, 270))
+    ;,  8 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,,   0))  same as 6
+    ;,  9 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,,  90))  same as 7
+    ;, 10 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,, 180))  same as 4
+    ;, 11 (-> tile-pixels (mirror-tile-vert ,,,) (rotate-tile ,,, 270))  same as 5
 
-    , 12 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,,   0))
-    , 13 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,,  90))
-    , 14 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,, 180))
-    , 15 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,, 270))
+    ;, 12 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,,   0))  same as 2
+    ;, 13 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,,  90))  same as 3
+    ;, 14 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,, 180))  same as 0
+    ;, 15 (-> tile-pixels (mirror-tile-horiz ,,,) (mirror-tile-vert ,,,) (rotate-tile ,,, 270))  same as 1
     }
 )
 
@@ -236,7 +236,7 @@
 
 
 (defn solve [tile-data state] ;-> sequence of possible states
-    (println state)
+    ;(println state)
     (if-let [next-space (get-next-space (:board state))]
         ;; try to place each available tile in the next space, and recursively solve the resulting states
         (flatten
@@ -245,7 +245,7 @@
                 (remove
                     nil?
                     (for [ tile-id (:tile-ids state)
-                         , orientation (range 0 16)
+                         , orientation (range 0 8)
                          ]
                         (place-tile tile-data state tile-id orientation next-space)
                     )
@@ -261,6 +261,11 @@
 )
 
 
+(defn solve-reducer [states ]
+    
+)
+
+
 
 (def sample-input (slurp "sample-input.txt"))
 (def parsed-sample-input (parse-input sample-input))
@@ -270,6 +275,7 @@
        ]
     (println (select-keys (val orientation) [:id :orientation :top :right :bottom :left]))
 )
+
 
 ;(def initial-board
 ;    (into
@@ -309,5 +315,15 @@
     }
 )
 
-(solve parsed-sample-input initial-state-sample)
+(def sample-solutions (solve parsed-sample-input initial-state-sample))
+(let [ board (:board (first sample-solutions))
+     , corners [(get-in board [[0 0] :id]) 
+                (get-in board [[0 2] :id]) 
+                (get-in board [[2 0] :id]) 
+                (get-in board [[2 2] :id])]
+     ]
+    (println "SAMPLE SOLUTION")
+    (println (str "corners IDs: " corners))
+    (println (str "product of corner IDs: " (apply * corners)))
+)
 
