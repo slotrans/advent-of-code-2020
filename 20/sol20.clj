@@ -261,10 +261,6 @@
 )
 
 
-(defn solve-reducer [states ]
-    
-)
-
 
 
 (def sample-input (slurp "sample-input.txt"))
@@ -315,15 +311,47 @@
     }
 )
 
-(def sample-solutions (solve parsed-sample-input initial-state-sample))
-(let [ board (:board (first sample-solutions))
+(def sample-solution (first (solve parsed-sample-input initial-state-sample)))
+(let [ board (:board sample-solution)
      , corners [(get-in board [[0 0] :id]) 
                 (get-in board [[0 2] :id]) 
                 (get-in board [[2 0] :id]) 
                 (get-in board [[2 2] :id])]
      ]
     (println "SAMPLE SOLUTION")
-    (println (str "corners IDs: " corners))
+    (println (str "corner IDs: " corners))
     (println (str "product of corner IDs: " (apply * corners)))
 )
 
+
+
+(def initial-board-p1
+    (into
+        (sorted-map)
+        (for [ x (range 0 12)
+             , y (range 0 12)
+             ]
+            {[x y] nil}
+        )
+    )
+)
+(def input20 (slurp "input20.txt"))
+(def parsed-input20 (parse-input input20))
+(def input20-tile-ds (into (sorted-set) (keys parsed-input20)))
+(def initial-state-p1
+    { :board initial-board-p1
+    , :tile-ids input20-tile-ds
+    }
+)
+
+(def p1-solution (first (solve parsed-input20 initial-state-p1))) ; first-ing a lazy sequence doesn't early-exit as well as `reduced` but I can't see how to refactor `solve` and/or `place-tile` to a reducer
+(let [ board (:board p1-solution)
+     , corners [(get-in board [[0 0] :id]) 
+                (get-in board [[0 11] :id]) 
+                (get-in board [[11 0] :id]) 
+                (get-in board [[11 11] :id])]
+     ]
+    (println "P1 SOLUTION")
+    (println (str "corner IDs: " corners)) ; [1453 1459 3181 2543]
+    (println (str "product of corner IDs: " (apply * corners))) ; 17148689442341
+)
