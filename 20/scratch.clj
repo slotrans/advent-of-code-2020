@@ -53,17 +53,17 @@
 ;; Tiles are listed here in L2R,T2B solution order (which will not match the
 ;; sorted-map based order below... that will be B,H,G,A,D,E,I,F,C).
 (def tile-data
-    { "B" {:id 1951 :name "B" :top 564 :right 318 :bottom 710 :left 587}
-    , "A" {:id 2311 :name "A" :top 231 :right 616 :bottom 210 :left 318}
-    , "I" {:id 3079 :name "I" :top 702 :right 264 :bottom 184 :left 616}
+    { "B" {:id 1951 :name "B" :top 564 :right 318 :bottom 710 :left 587} ; o=6
+    , "A" {:id 2311 :name "A" :top 231 :right 616 :bottom 210 :left 318} ; o=6
+    , "I" {:id 3079 :name "I" :top 702 :right 264 :bottom 184 :left 616} ; o=0
 
-    , "H" {:id 2729 :name "H" :top 710 :right   9 :bottom 85  :left 962}
-    , "D" {:id 1427 :name "D" :top 210 :right 348 :bottom 948 :left   9}
-    , "F" {:id 2473 :name "F" :top 184 :right 481 :bottom 399 :left 348}
+    , "H" {:id 2729 :name "H" :top 710 :right   9 :bottom 85  :left 962} ; o=6
+    , "D" {:id 1427 :name "D" :top 210 :right 348 :bottom 948 :left   9} ; o=6
+    , "F" {:id 2473 :name "F" :top 184 :right 481 :bottom 399 :left 348} ; o=5
 
-    , "G" {:id 2971 :name "G" :top 85  :right 689 :bottom 161 :left  78}
-    , "E" {:id 1489 :name "E" :top 948 :right 288 :bottom 848 :left 689}
-    , "C" {:id 1171 :name "C" :top 399 :right 902 :bottom 192 :left 288}
+    , "G" {:id 2971 :name "G" :top 85  :right 689 :bottom 161 :left  78} ; o=6
+    , "E" {:id 1489 :name "E" :top 948 :right 288 :bottom 848 :left 689} ; o=6
+    , "C" {:id 1171 :name "C" :top 399 :right 902 :bottom 192 :left 288} ; o=4
     }
 )
 
