@@ -339,10 +339,10 @@
 )
 (def input20 (slurp "input20.txt"))
 (def parsed-input20 (parse-input input20))
-(def input20-tile-ds (into (sorted-set) (keys parsed-input20)))
+(def input20-tile-ids (into (sorted-set) (keys parsed-input20)))
 (def initial-state-p1
     { :board initial-board-p1
-    , :tile-ids input20-tile-ds
+    , :tile-ids input20-tile-ids
     }
 )
 
@@ -361,3 +361,68 @@
 
 ;;; FUNCTIONS FOR P2 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn strip-borders [tile-pixels] ; -> pixel grid (vector of vectors)
+    (mapv 
+        #(vec (butlast (rest %)))
+        (butlast (rest tile-pixels))
+    )
+)
+
+
+(defn allocate-blank-grid [size] ; -> size X size pixel grid filled with _ characters
+    (let [line (vec (repeat size \_))]
+        (vec (repeat size line))
+    )
+)
+
+
+(defn replace-references-with-stripped-tile-pixels [tile-data board] ; -> map of coords to pixel grids
+    (into
+        (sorted-map) ; not strictly necessary
+        (for [board-space board]
+            (let [ coords (key board-space)
+                 , {:keys [id orientation]} (val board-space)
+                 , tile-pixels (get-in tile-data [id orientation :pixels])
+                 ]
+                {coords (strip-borders tile-pixels)}
+            )
+        )
+    )
+)
+
+
+(defn blit [grid tile-coords-pixels-pair] ; -> grid
+    (let [ coords (key tile-coords-pixels-pair)
+         , pixels (val tile-coords-pixels-pair)
+         , [x y] coords ; coordinates in the tile grid
+         , tile-size (count (first pixels))
+         , dest-x-base (* x tile-size)
+         , dest-y-base (* y tile-size)
+         ]
+        (reduce 
+            (fn [grid_ [x y]]
+                (assoc-in
+                    grid_
+                    [(+ dest-x-base x) (+ dest-y-base y)] 
+                    (get-in pixels [x y])
+                )
+            )
+            grid
+            (for [x (range 0 tile-size), y (range 0 tile-size)] [x y])
+        )
+    )
+)
+
+
+(defn full-picture [tile-data board] ; -> pixel grid (vector of vectors)
+    (reduce
+        blit
+        (allocate-blank-grid (* 8 12)) ; tiles are 8x8 after stripping borders, grid is 12x12 tiles
+        (replace-references-with-stripped-tile-pixels tile-data board)
+    )
+)
+
+(def p2-picture (full-picture parsed-input20 (:board p1-solution)))
+(doseq [line p2-picture]
+    (println (apply str line))
+)
