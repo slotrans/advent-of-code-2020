@@ -46,18 +46,20 @@
 
 
 (defn rotate-tile [tile-pixels degrees] ; -> tile-pixels, rotated clockwise by degrees
-    (condp = degrees
-          0 tile-pixels
-         90 (vec
-                (for [pos (range 0 10)] ; for each position, left to right
-                    (mapv
-                        #(get % pos)
-                        (reverse tile-pixels) ; take from that position, moving bottom to top
+    (let [size-of-tile (count (first tile-pixels))]
+        (condp = degrees
+              0 tile-pixels
+             90 (vec
+                    (for [pos (range 0 size-of-tile)] ; for each position, left to right
+                        (mapv
+                            #(get % pos)
+                            (reverse tile-pixels) ; take from that position, moving bottom to top
+                        )
                     )
                 )
-            )
-        180 (rotate-tile (rotate-tile tile-pixels 90) 90)
-        270 (rotate-tile (rotate-tile (rotate-tile tile-pixels 90) 90) 90)
+            180 (rotate-tile (rotate-tile tile-pixels 90) 90)
+            270 (rotate-tile (rotate-tile (rotate-tile tile-pixels 90) 90) 90)
+        )
     )
 )
 
@@ -355,3 +357,7 @@
     (println (str "corner IDs: " corners)) ; [1453 1459 3181 2543]
     (println (str "product of corner IDs: " (apply * corners))) ; 17148689442341
 )
+
+
+;;; FUNCTIONS FOR P2 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
