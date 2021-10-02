@@ -105,7 +105,7 @@
 
 
 (defn enriched-tile [tile-id tile-pixels]
-    (println (str "enriching tile " tile-id))
+    ;(println (str "enriching tile " tile-id))
     { tile-id 
         (into
             (sorted-map) ; not _necessary_ but makes inspecting data easier
@@ -403,8 +403,8 @@
             (fn [grid_ [x y]]
                 (assoc-in
                     grid_
-                    [(+ dest-x-base x) (+ dest-y-base y)] 
-                    (get-in pixels [x y])
+                    [(+ dest-y-base y) (+ dest-x-base x)] ; vec-of-vec coords are y-first
+                    (get-in pixels [y x])                 ; vec-of-vec coords are y-first
                 )
             )
             grid
@@ -422,7 +422,112 @@
     )
 )
 
+
 (def p2-picture (full-picture parsed-input20 (:board p1-solution)))
 (doseq [line p2-picture]
     (println (apply str line))
 )
+
+
+;; using _ to denote a "this can be anything" space
+;; note: 20 wide * 3 high
+(def sea-monster
+    [ (vec "__________________#_")
+    , (vec "#____##____##____###")
+    , (vec "_#__#__#__#__#__#___")
+    ]
+)
+(def monster-height (count sea-monster))
+(def monster-width (count (first sea-monster)))
+
+
+(defn picture-region [picture x y width height]
+    ;(println (str "x=" x ", y=" y ", width=" width ", height=" height))
+    (mapv
+        #(subvec % x (+ x width))
+        (subvec picture y (+ y height))
+    )
+)
+
+
+(defn monster? [picture]
+    (every?
+        true?
+        (for [ y (range 0 monster-height)
+             , x (range 0 monster-width)
+             ]
+            (or (= \_ (get-in sea-monster [y x]))
+                (and (= \# (get-in sea-monster [y x]))
+                     (= \# (get-in picture [y x]))
+                )
+            )
+        )
+    )
+)
+
+
+(defn find-monsters [picture]
+    (let [ picture-height (count picture)
+         , picture-width (count (first picture))
+         ]
+        (doseq [ y (range 0 (- picture-height monster-height))
+               , x (range 0 (- picture-width monster-width))
+               ]
+            (if (monster? (picture-region picture x y monster-width monster-height))
+                (println (str "sea monster found at (" x ", " y ")"))
+            )
+        )
+    )
+)
+
+
+
+(def p2-sample-picture
+    [ (vec ".####...#####..#...###..")
+    , (vec "#####..#..#.#.####..#.#.")
+    , (vec ".#.#...#.###...#.##.##..")
+    , (vec "#.#.##.###.#.##.##.#####")
+    , (vec "..##.###.####..#.####.##")
+    , (vec "...#.#..##.##...#..#..##")
+    , (vec "#.##.#..#.#..#..##.#.#..")
+    , (vec ".###.##.....#...###.#...")
+    , (vec "#.####.#.#....##.#..#.#.")
+    , (vec "##...#..#....#..#...####")
+    , (vec "..#.##...###..#.#####..#")
+    , (vec "....#.##.#.#####....#...")
+    , (vec "..##.##.###.....#.##..#.")
+    , (vec "#...#...###..####....##.")
+    , (vec ".#.##...#.##.#.#.###...#")
+    , (vec "#.###.#..####...##..#...")
+    , (vec "#.###...#.##...#.######.")
+    , (vec ".###.###.#######..#####.")
+    , (vec "..##.#..#..#.#######.###")
+    , (vec "#.#..##.########..#..##.")
+    , (vec "#.#####..#.#...##..#....")
+    , (vec "#....##..#.#########..##")
+    , (vec "#...#.....#..##...###.##")
+    , (vec "#..###....##.#...##.##.#")
+    ]
+)
+
+;(find-monsters p2-sample-picture)
+
+;(println "checking 0")
+;(find-monsters (rotate-tile p2-picture 0))
+;(println "checking 90")
+;(find-monsters (rotate-tile p2-picture 90))
+;(println "checking 180")
+;(find-monsters (rotate-tile p2-picture 180))
+;(println "checking 270")
+;(find-monsters (rotate-tile p2-picture 270))
+;(println "checking h-mirrored 0")
+;(find-monsters (rotate-tile (mirror-tile-horiz p2-picture) 0))    <- it's this one
+;(println "checking h-mirrored 90")
+;(find-monsters (rotate-tile (mirror-tile-horiz p2-picture) 90))
+;(println "checking h-mirrored 180")
+;(find-monsters (rotate-tile (mirror-tile-horiz p2-picture) 180))
+;(println "checking h-mirrored 270")
+;(find-monsters (rotate-tile (mirror-tile-horiz p2-picture) 270))
+
+
+(find-monsters (mirror-tile-horiz p2-picture))
