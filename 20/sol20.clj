@@ -466,6 +466,30 @@
 )
 
 
+(defn write-monster [picture x y] ; -> picture, with \O written in the shape of the sea monster
+    (-> picture
+        ; first line
+        (assoc-in ,,, [y (+ x 18)] \O)
+        ; second line
+        (assoc-in ,,, [(+ y 1) x] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 5)] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 6)] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 11)] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 12)] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 17)] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 18)] \O)
+        (assoc-in ,,, [(+ y 1) (+ x 19)] \O)
+        ; third line
+        (assoc-in ,,, [(+ y 2) (+ x 1)] \O)
+        (assoc-in ,,, [(+ y 2) (+ x 4)] \O)
+        (assoc-in ,,, [(+ y 2) (+ x 7)] \O)
+        (assoc-in ,,, [(+ y 2) (+ x 10)] \O)
+        (assoc-in ,,, [(+ y 2) (+ x 13)] \O)
+        (assoc-in ,,, [(+ y 2) (+ x 16)] \O)
+    )
+)
+
+
 (defn find-monsters [picture]
     (let [ picture-height (count picture)
          , picture-width (count (first picture))
@@ -531,3 +555,8 @@
 
 
 (find-monsters (mirror-tile-horiz p2-picture))
+
+; next:
+;  - modify `find-monsters` to call `write-monster` for each match
+;  - modify `monster?` to match both \# and \O (not _sure_ this is necessary)
+;  - count each character to get the solution
