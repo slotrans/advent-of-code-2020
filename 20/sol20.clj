@@ -505,6 +505,34 @@
 )
 
 
+(defn find-monsters-and-replace [picture]
+    (let [ picture-height (count picture)
+         , picture-width (count (first picture))
+         , coords-to-check (for [ y (range 0 (- picture-height monster-height))
+                                , x (range 0 (- picture-width monster-width))
+                                ]
+                                [x y]
+                           )
+         ]
+        (println coords-to-check)
+        (loop [ modified-picture picture
+              , remaining-coords coords-to-check
+              ]
+            (if-let [[x y] (first remaining-coords)]
+                (if (monster? (picture-region picture x y monster-width monster-height))
+                    (do
+                        (println (str "sea monster found at (" x ", " y ")"))
+                        (recur (write-monster modified-picture x y) (rest remaining-coords))
+                    )
+                    (recur modified-picture (rest remaining-coords))
+                )
+                modified-picture
+            )
+        )
+    )
+)
+
+
 
 (def p2-sample-picture
     [ (vec ".####...#####..#...###..")
@@ -535,6 +563,15 @@
 )
 
 ;(find-monsters p2-sample-picture)
+(def p2-sample-modified (find-monsters-and-replace p2-sample-picture))
+(doseq [line p2-sample-modified] (println (apply str line)))
+(let [ grouped (group-by identity (for [line p2-sample-modified, c line] c))
+     , with-counts (into {}
+                       (for [[k v] grouped] [k (count v)])
+                   )
+     ]
+    (println with-counts)
+)
 
 ;(println "checking 0")
 ;(find-monsters (rotate-tile p2-picture 0))
@@ -554,9 +591,18 @@
 ;(find-monsters (rotate-tile (mirror-tile-horiz p2-picture) 270))
 
 
-(find-monsters (mirror-tile-horiz p2-picture))
+;(find-monsters (mirror-tile-horiz p2-picture))
 
-; next:
-;  - modify `find-monsters` to call `write-monster` for each match
-;  - modify `monster?` to match both \# and \O (not _sure_ this is necessary)
-;  - count each character to get the solution
+
+(def p2-picture-modified (find-monsters-and-replace (mirror-tile-horiz p2-picture)))
+(doseq [line p2-picture-modified] (println (apply str line)))
+(let [ grouped (group-by identity (for [line p2-picture-modified, c line] c))
+     , with-counts (into {}
+                       (for [[k v] grouped] [k (count v)])
+                   )
+     ]
+    (println with-counts)
+)
+
+; p2 answer = 2009
+; dealing with potentially-overlapping sea monsters turned out to be a non-issue
