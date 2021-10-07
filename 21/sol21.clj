@@ -145,3 +145,15 @@ sqjhc mxmxvkd sbzzf (contains fish)"
 
 (def input21-answer (compute-p1-answer parsed-input21 input21-allergen-ingredient-map))
 (println (str "p1 answer: " input21-answer)) ; 2734
+
+
+;;; PART 2
+
+(defn get-p2-answer [solution]
+    (str/join 
+        "," 
+        (for [[k v] (sort solution)] (first v))
+    )
+)
+(println (str "p2 answer: " (get-p2-answer input21-allergen-ingredient-map))) ; kbmlt,mrccxm,lpzgzmk,ppj,stj,jvgnc,gxnr,plrlg
+ 
