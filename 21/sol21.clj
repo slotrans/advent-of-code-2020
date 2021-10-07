@@ -128,7 +128,7 @@ sqjhc mxmxvkd sbzzf (contains fish)"
 (println (str "sample solved allergen/ingredient pairs: " sample-allergen-ingredient-map))
 
 (def sample-answer (compute-p1-answer parsed-sample sample-allergen-ingredient-map))
-(println (str "sample answer: " sample-answer))
+(println (str "sample answer: " sample-answer)) ; 5
 
 
 (def input21 (slurp "input21.txt"))
@@ -144,4 +144,4 @@ sqjhc mxmxvkd sbzzf (contains fish)"
 (println (str "p1 solved allergen/ingredient pairs: " input21-allergen-ingredient-map))
 
 (def input21-answer (compute-p1-answer parsed-input21 input21-allergen-ingredient-map))
-(println (str "p1 answer: " input21-answer))
+(println (str "p1 answer: " input21-answer)) ; 2734
