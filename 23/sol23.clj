@@ -17,8 +17,37 @@
 )
 
 
+(defn step-game [state] ; -> new state
+    (let [ current-cup (first state)
+         , picked-up-cups (take 3 (rest state))
+         , remaining-cups (drop 3 (rest state))
+         , destination-cup (get-destination current-cup remaining-cups)
+         , destination-index (.indexOf remaining-cups destination-cup)
+         , [left-part right-part] (split-at (inc destination-index) remaining-cups) ; split-at takes a count not an index, so it needs to be +1
+         ]
+        (concat left-part picked-up-cups right-part [current-cup])
+    )
+)
+
+
+(defn clockwise-from-one [cups]
+    (let [ index-of-one (.indexOf cups 1)
+         , [left-part right-part] (split-at (inc index-of-one) cups)
+         ]
+        (apply str (concat right-part (butlast left-part)))
+    )
+)
+
 
 (def sample-input [3 8 9 1 2 5 4 6 7])
+(def sample-after-10 (vec (nth (iterate step-game sample-input) 10)))
+(println (str "sample after 10 turns: " sample-after-10))
+(def sample-after-100 (vec (nth (iterate step-game sample-input) 100)))
+(println (str "sample after 100 turns: " sample-after-100))
+(println (str "sample answer: " (clockwise-from-one sample-after-100)))
+
 
 (def input23 [8 7 2 4 9 5 1 3 6])
-
+(def input23-after-100 (vec (nth (iterate step-game input23) 100)))
+(println (str "p1 input after 100 turns: " input23-after-100))
+(println (str "p1 answer: " (clockwise-from-one input23-after-100)))
