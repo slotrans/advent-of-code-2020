@@ -1,6 +1,8 @@
 (ns net.blergh.advent2020
 )
 
+;;; credit for the idea of using a map to model a linked list: https://0xdf.gitlab.io/adventofcode2020/23
+
 
 (defn to-ringlist [v]
     (into
